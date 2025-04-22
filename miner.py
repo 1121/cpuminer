@@ -1,59 +1,71 @@
-import json
 import socket
-import subprocess
-import hashlib
+import time
+import json
+import struct
 
-# Mining pool details
-POOL_URL = "stratum+tcp://btc.viabtc.io:3333"
-USERNAME = "bznbnn.001"
-PASSWORD = "123"
-PAYOUT_ADDRESS = "bc1qsf5hfv7hd3jw22lzdwc7pm9yuru5trw8xd9h2f"
+# Pool Configuration
+POOL_URL = "https://www.viabtc.com/"  # Replace with the correct pool hostname
+POOL_PORT = 3333  # Replace with the desired port (e.g., 3333, 25, or 443)
+WORKER_NAME = "bznbnn.001"  # Replace with your worker name
+PASSWORD = "123"  # Replace with your password
 
-# Initialize Stratum connection
-def create_stratum_connection():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("btc.viabtc.io", 3333))
-    return s
+# Define Stratum version and protocol commands
+STRATUM_VERSION = 0x00000001  # Protocol version
+SUBSCRIBE_COMMAND = {
+    "id": 1,
+    "method": "mining.subscribe",
+    "params": []
+}
 
-def send_json_rpc_request(s, method, params):
-    req = json.dumps({
-        "jsonrpc": "2.0",
-        "method": method,
-        "params": params,
-        "id": 1
-    }) + "\n"
-    s.send(req.encode())
+AUTHORIZE_COMMAND = {
+    "id": 2,
+    "method": "mining.authorize",
+    "params": [WORKER_NAME, PASSWORD]
+}
 
-def handle_job(job):
-    # This is where the job is parsed
-    # Start miner with the job data
-    # Example: running cpuminer with the job parameters
-    miner_cmd = [
-        "cpuminer", 
-        "-o", POOL_URL, 
-        "-u", USERNAME, 
-        "-p", PASSWORD,
-        "--coin", "btc"
-    ]
-    process = subprocess.Popen(miner_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = process.communicate()
-    print(out.decode())
+# Create a function to send and receive data via the TCP socket
+def send_command(sock, command):
+    """Send a command to the mining pool."""
+    command_json = json.dumps(command) + "\n"
+    sock.sendall(command_json.encode("utf-8"))
 
-def main():
-    # Establish Stratum connection
-    s = create_stratum_connection()
+def receive_response(sock):
+    """Receive the response from the mining pool."""
+    response = sock.recv(1024).decode("utf-8")
+    return response.strip()
 
-    # Authenticate
-    send_json_rpc_request(s, "mining.subscribe", [])
-    send_json_rpc_request(s, "mining.authorize", [USERNAME, PASSWORD])
+# Main function to connect and communicate with the pool
+def start_mining():
+    """Connect to the pool and start mining."""
+    try:
+        # Create a TCP socket and connect to the pool
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((POOL_URL, POOL_PORT))
 
-    while True:
-        # Receive and handle mining jobs
-        data = s.recv(1024).decode('utf-8')
-        if data:
-            job = json.loads(data)
-            print("Received job:", job)
-            handle_job(job)
+            print(f"[🌐] Connected to pool: {POOL_URL}:{POOL_PORT}")
+
+            # Send the subscribe command to the pool
+            send_command(s, SUBSCRIBE_COMMAND)
+            response = receive_response(s)
+            print(f"[✅] Subscribe response: {response}")
+
+            # Send the authorize command to the pool
+            send_command(s, AUTHORIZE_COMMAND)
+            response = receive_response(s)
+            print(f"[✅] Authorize response: {response}")
+
+            # Start the mining loop (You can adjust this for your mining logic)
+            while True:
+                # For simplicity, just receive and print pool messages
+                pool_message = receive_response(s)
+                print(f"[⚙️] Pool message: {pool_message}")
+
+                # Add your mining logic here (e.g., submitting work)
+                # You can send "mining.submit" or other commands as per your protocol
+                time.sleep(5)  # Simulate a delay (adjust as necessary)
+
+    except Exception as e:
+        print(f"[❌] Error: {e}")
 
 if __name__ == "__main__":
-    main()
+    start_mining()
