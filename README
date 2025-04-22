@@ -163,7 +163,39 @@ While laptops can be used for mining, they are not the most efficient or cost-ef
 Let me know if you'd like more information about specific models or configurations!
 
 
+To start miner.py in your cpuminer folder, you can run it with Python. Here's the full command:
 
+bash
+Kopiera
+Redigera
+python3 miner.py
+But before that, make sure:
+
+✅ Requirements Check:
+You're in the right folder:
+
+bash
+Kopiera
+Redigera
+cd ~/build/cpuminer
+You have Python 3 and requests installed:
+
+bash
+Kopiera
+Redigera
+python3 --version
+pip3 install --user requests
+✅ Run the Miner Script:
+bash
+Kopiera
+Redigera
+python3 miner.py
+If you want to pass parameters (like pool URL, user, etc.), your miner.py must support them (you'll see argparse or sys.argv in the code). Example:
+
+bash
+Kopiera
+Redigera
+python3 miner.py --url stratum+tcp://btc.viabtc.io:3333 --user bznbnn.001 --pass 123
 
 
 
