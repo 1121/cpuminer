@@ -1,6 +1,6 @@
 Directory structure:
 └── 1121-cpuminer/
-    ├── README.md
+    ├── README
     ├── cpu-miner.c
     ├── LICENSE
     └── miner.py
